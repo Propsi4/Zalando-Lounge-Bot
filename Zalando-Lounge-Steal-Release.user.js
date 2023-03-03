@@ -109,6 +109,10 @@
                         }
                         catched_sizes += simples[i].filterValue + " "
                         audio.play()
+                        if(!search_sizes.length){
+                            clearInterval(timer)
+                            alert("Done, catched sizes: " + catched_sizes)
+                        }
                     }
 
                 }
