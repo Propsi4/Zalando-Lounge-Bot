@@ -12,14 +12,27 @@
 
 (function() {
     'use strict';
+    // elements
+        let controlpanel = document.createElement('div')
+        let continue_checkbox = document.createElement('input')
+        let continue_checkbox_label = document.createElement('label')
+        let start_button = document.createElement('button')
+        let content = document.createElement('div')
+        let title_content = document.createElement('span')
+        let listSizes = document.createElement('div')
+        let title_controlpanel = document.createElement('div')
+        let title = document.createElement('span')
+
     let working = false
-    var audio = new Audio('https://cdn.freesound.org/previews/277/277033_847303-lq.mp3')
+    const audio = new Audio('https://cdn.freesound.org/previews/277/277033_847303-lq.mp3')
     var continue_mode = false
-    var url_array = window.location.href.split("/")
-    var campaign = url_array[4]
-    var article = url_array[8]
-    var sizes_api_url = `https://${url_array[2]}/api/phoenix/catalog/events/${campaign}/articles/${article}?globalCats=1`
-    var xmlHttp = new XMLHttpRequest();
+    const url_array = window.location.href.split("/")
+    const campaign = url_array[4]
+    const article = url_array[8]
+    const sizes_api_url = `https://${url_array[2]}/api/phoenix/catalog/events/${campaign}/articles/${article}?globalCats=1`
+    const add_to_cart = `https://${url_array[2]}/api/phoenix/stockcart/cart/items`
+    const fetch_info_url = `https://${url_array[2]}/api/phoenix/stockcart/articles`
+    let xmlHttp = new XMLHttpRequest();
     let search_sizes = []
     const disabled_color = 'rgb(230, 34, 44)'
     const enabled_color = 'rgb(62, 179, 93)'
@@ -51,50 +64,62 @@
             alert("Choose the size!")
             return
         }
+
         var catched_sizes = ""
         working = true
-        let add_to_cart = `https://${url_array[2]}/api/phoenix/stockcart/cart/items`
+
         let button = e.currentTarget
         let time=0
-        let timer=setInterval(() => {
-            if(!search_sizes.length){
-                clearInterval(timer)
-                audio.play()
-                alert("Stopped. No size were found")
+        let data = []
+        let sizes_data = []
+        xmlHttp.open("GET", sizes_api_url, false)
+        xmlHttp.send(null)
+        var simples = JSON.parse(xmlHttp.responseText).simples
+        for(let i = 0; i < simples.length; i++){
+            if(search_sizes.includes(simples[i].filterValue)){
+                data.push(simples[i].sku)
+                sizes_data.push(simples[i].filterValue)
             }
-
-
+        }
+        let timer=setInterval(() => {
+            if(!data.length){
+                 clearInterval(timer)
+                 alert("Done, catched sizes: " + catched_sizes)
+            }
+            let body = JSON.stringify({
+                "campaignIdentifier": campaign,
+                "configSku": article,
+                "simpleSkus": data
+            })
             try{
-                xmlHttp.open("GET", sizes_api_url, false)
-                xmlHttp.send(null)
+                xmlHttp.open("POST", fetch_info_url, false)
+                xmlHttp.setRequestHeader("Content-Type","application/json")
+                xmlHttp.send(body)
             }catch{
                 clearInterval(timer)
                 audio.play()
                 alert("Stopped. Bad connection(no Internet)")
             }
-            let simples = JSON.parse(xmlHttp.responseText).simples
-            for(let i = 0; i < simples.length; i++){
-                if(search_sizes.includes(simples[i].filterValue)){
-                   console.log(simples[i].filterValue, "-",simples[i].stockStatus)
-                    if(simples[i].stockStatus == "SOLD_OUT"){
-                            const index = search_sizes.indexOf(simples[i].filterValue);
-                            search_sizes.splice(index, 1);
-                    }
-                }
-                if(simples[i].stockStatus == "AVAILABLE" && search_sizes.includes(simples[i].filterValue)){
-                   const body = JSON.stringify({
+            let info = JSON.parse(xmlHttp.responseText)
+            for(let i = 0; i < info.length; i++){
+                let index = data.indexOf(info[i].simpleSku);
+                 //console.log(sizes_data[index] + " - " + info[i].stockStatus)
+                 if(info[i].stockStatus == "AVAILABLE"){
+                   let body = JSON.stringify({
                        "quantity" : 1,
                        "campaignIdentifier": campaign,
                        "configSku": article,
-                       "simpleSku": simples[i].sku,
+                       "simpleSku": info[i].simpleSku,
                        "additional" : {
                            "reco" : 0
                        }
-                   });
+                   })
+                   try{
                     xmlHttp.open("POST", add_to_cart, false)
                     xmlHttp.setRequestHeader("Content-Type","application/json")
                     xmlHttp.send(body)
-                    if(xmlHttp.status === 501 || xmlHttp.status === 403 || xmlHttp.status === 409){
+                   }catch(e){}
+                     if(xmlHttp.status === 501){
                         clearInterval(timer)
                         let message = JSON.parse(xmlHttp.responseText).message
                         audio.play()
@@ -102,38 +127,26 @@
                              "\nError "+xmlHttp.status+": " + message)
                         break
                     }
-                    else{
-                        if(!continue_mode){
-                            const index = search_sizes.indexOf(simples[i].filterValue);
-                            search_sizes.splice(index, 1);
-                        }
-                        catched_sizes += simples[i].filterValue + " "
-                        audio.play()
-                        if(!search_sizes.length){
-                            clearInterval(timer)
-                            alert("Done, catched sizes: " + catched_sizes)
-                        }
-                    }
+                    else if(xmlHttp.status === 200){
 
-                }
+                        catched_sizes += sizes_data[index] + " "
+                        audio.play()
+                        if(!continue_mode){
+                            data.splice(index, 1);
+                        }
+                            title.textContent = "Catched: " + catched_sizes
+                    }
+                 }
             }
             time++
             button.innerHTML = `Working... (${time}s)\nTo stop - reload the page`
         },1000)
 
+        
     }
 
     window.addEventListener('load', function() {
 
-        let controlpanel = document.createElement('div')
-        let continue_checkbox = document.createElement('input')
-        let continue_checkbox_label = document.createElement('label')
-        let start_button = document.createElement('button')
-        let content = document.createElement('div')
-        let title_content = document.createElement('span')
-        let listSizes = document.createElement('div')
-        let title_controlpanel = document.createElement('div')
-        let title = document.createElement('span')
         let position = getElementByXpath('//*[@id="article-size-title"]')
 
         // CSS START
@@ -211,8 +224,6 @@
                 div.innerHTML = simples[i].filterValue
                 listSizes.appendChild(div)
             }
-
-        }
-}, false);
-    
-})();
+      }
+    }, false);
+    })();
