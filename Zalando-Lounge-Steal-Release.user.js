@@ -84,6 +84,7 @@
         let timer=setInterval(() => {
             if(!data.length){
                  clearInterval(timer)
+                audio.play()
                  alert("Done, catched sizes: " + catched_sizes)
             }
             let body = JSON.stringify({
