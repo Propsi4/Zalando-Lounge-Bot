@@ -63,15 +63,15 @@
                 alert("Stopped. No size were found")
             }
 
-            xmlHttp.open("GET", sizes_api_url, false)
+
             try{
+                xmlHttp.open("GET", sizes_api_url, false)
                 xmlHttp.send(null)
             }catch{
                 clearInterval(timer)
                 audio.play()
                 alert("Stopped. Bad connection(no Internet)")
             }
-            console.log(xmlHttp.status)
             let simples = JSON.parse(xmlHttp.responseText).simples
             for(let i = 0; i < simples.length; i++){
                 if(search_sizes.includes(simples[i].filterValue)){
