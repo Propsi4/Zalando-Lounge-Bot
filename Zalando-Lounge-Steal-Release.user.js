@@ -128,6 +128,9 @@
                              "\nError "+xmlHttp.status+": " + message)
                         break
                     }
+                     else if(xmlHttp.status === 409 || xmlHttp.status === 403){
+                         console.log("["+xmlHttp.status+"]"+" Trying to catch " + sizes_data[index])
+                     }
                     else if(xmlHttp.status === 200){
 
                         catched_sizes += sizes_data[index] + " "
