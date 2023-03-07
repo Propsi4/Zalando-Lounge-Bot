@@ -109,6 +109,7 @@
                    let body = JSON.stringify({
                        "quantity" : 1,
                        "campaignIdentifier": campaign,
+                       "ignoreExceptionCodes": [506,403],
                        "configSku": article,
                        "simpleSku": info[i].simpleSku,
                        "additional" : {
@@ -118,6 +119,7 @@
                    try{
                     xmlHttp.open("POST", add_to_cart, false)
                     xmlHttp.setRequestHeader("Content-Type","application/json")
+                    xmlHttp.setRequestHeader("Accept","application/json, text/plain, */*")
                     xmlHttp.send(body)
                    }catch(e){}
                      if(xmlHttp.status === 501){
@@ -132,19 +134,19 @@
                          console.log("["+xmlHttp.status+"]"+" Trying to catch " + sizes_data[index])
                      }
                     else if(xmlHttp.status === 200){
-
+                        console.log(sizes_data[index])
                         catched_sizes += sizes_data[index] + " "
                         audio.play()
                         if(!continue_mode){
                             data.splice(index, 1);
                         }
-                            title.textContent = "Catched: " + catched_sizes
+                        title.textContent = "Catched: " + catched_sizes
                     }
                  }
             }
             time++
-            button.innerHTML = `Working... (${time}s)\nTo stop - reload the page`
-        },1000)
+            button.innerHTML = `Working... (${time})\nTo stop - reload the page`
+        },2000)
 
         
     }
